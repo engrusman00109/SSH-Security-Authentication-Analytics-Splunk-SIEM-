@@ -1,0 +1,268 @@
+<dashboard version="1.1" theme="light">
+  <label>SSH Security &amp; Authentication Analytics</label>
+  <description>Comprehensive Security Dashboard for Analyzing SSH Logs, Login Attempts, Anomalies, and User Activities.</description>
+  <row>
+    <panel>
+      <title>Total SSH Log Events Count</title>
+      <single>
+        <title>Overall count of all recorded SSH activity events in the ingested dataset.</title>
+        <search>
+          <query>index= ssh_logs | stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">128</option>
+        <option name="rangeColors">["0x118832","0x0877a6","0xf8be34","0xf1813f","0x555","0x1182f3","0xdc4e41"]</option>
+        <option name="rangeValues">[12,30,70,100,200,400]</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.size">large</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Successful SSH Logins</title>
+      <single>
+        <title>Count of successfully authenticated SSH sessions</title>
+        <search>
+          <query>index="ssh_logs" (*accept* OR *success* OR "session opened") | stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Total Failed Login Attempts</title>
+      <single>
+        <title>Total number of unsuccessful SSH login attempts</title>
+        <search>
+          <query>index="ssh_logs" "failed" OR "invalid" OR "Accepted=False" | stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Other System &amp; Session Events</title>
+      <single>
+        <title>Operational SSH events such as session disconnects, key exchanges, and connection closures</title>
+        <search>
+          <query>index=ssh_logs NOT (*accept* OR *success* OR "session opened" OR *fail* OR *invalid*) | stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>SSH Event Types Distribution</title>
+      <chart>
+        <title>Categorizes and displays the top 10 primary operational and security event types recorded in the SSH log dataset.</title>
+        <search>
+          <query>index="ssh_logs" | top limit=10 event_type</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Authentication Status Over Time</title>
+      <chart>
+        <title>Compares successful connections against failed ones across time intervals.</title>
+        <search>
+          <query>index="ssh_logs" | eval Status=if(auth_success="true" OR auth_success=1, "Successful", "Failed") | timechart count by Status</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Unique Source IP Addresses</title>
+      <single>
+        <title>Total number of distinct IP addresses trying to connect via SSH.</title>
+        <search>
+          <query>index=ssh_logs | rex field=_raw "(?&lt;extracted_ip&gt;\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})" | stats dc(extracted_ip) as Unique_IPs</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xcba700"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Top 10 Source IPs by Volume</title>
+      <chart>
+        <title>Identifies the top client IP addresses generating the most SSH connections.</title>
+        <search>
+          <query>index="ssh_logs" | top limit=10 id_orig_h</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Top 10 Targeted Usernames</title>
+      <chart>
+        <title>Shows the usernames most frequently targeted by automated scripts or attackers.</title>
+        <search>
+          <query>index="ssh_logs" | top limit=10 username</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Unique Targeted Usernames</title>
+      <single>
+        <title>Count of distinct usernames targeted during SSH connection attempts.</title>
+        <search>
+          <query>index="ssh_logs" | stats dc(username) as Unique_Users</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0xcba700","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,100]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Privileged Account Attacks</title>
+      <single>
+        <title>Counts attempts against superuser or admin accounts.</title>
+        <search>
+          <query>index="ssh_logs" (username="root" OR username="admin" OR username="administrator") | stats count</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x118832","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Top Suspicious IPs (Failed Logins)</title>
+      <chart>
+        <title>Highlights source IPs responsible for the highest number of failed logins</title>
+        <search>
+          <query>index="ssh_logs" auth_success="false" OR auth_success=0 | top limit=10 id_orig_h</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Destination Ports Targeted</title>
+      <chart>
+        <title>Analyzes traffic targeting destination service ports.</title>
+        <search>
+          <query>index="ssh_logs" | top limit=5 id_resp_p</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>SSH Connection States Breakdown</title>
+      <chart>
+        <title>Shows TCP connection state codes (e.g., SF, REJ, S0) for network analysis.</title>
+        <search>
+          <query>index="ssh_logs" | top limit=5 conn_state</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Multiple Auth Attempts Anomaly</title>
+      <table>
+        <title>IPs with Excess Authentication Attempts (Flags source IPs attempting more than 3 authentications)</title>
+        <search>
+          <query>index="ssh_logs" | stats sum(auth_attempts) as Attempts, values(username) as Targeted_Users by id_orig_h | where Attempts &gt; 3 | sort - Attempts</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Username vs Source IP Correlation</title>
+      <table>
+        <title>Maps which client IPs are trying to authenticate with specific usernames.</title>
+        <search>
+          <query>index="ssh_logs" | stats count by username, id_orig_h | sort - count | head 15</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>High Volume Network Activity</title>
+      <table>
+        <title>Detects aggressive source IPs generating high packet or byte volumes.</title>
+        <search>
+          <query>index="ssh_logs" | stats sum(orig_pkts) as Total_Packets, sum(orig_ip_bytes) as Total_Bytes by id_orig_h | sort - Total_Packets | head 10</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>index="ssh_logs" | table _time, id_orig_h, id_resp_h, username, auth_attempts, auth_success, conn_state | sort - _time | head 20</query>
+          <earliest>0</earliest>
+          <latest></latest>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>
